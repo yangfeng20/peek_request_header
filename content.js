@@ -8,7 +8,7 @@ function task() {
 
         handlerRequestArr(requestArr)
         // 更新弹出之后的数据
-        chrome.storage.local.set({"requestArr":[]})
+        chrome.storage.local.set({"requestArr":requestArr})
     })
 }
 
@@ -28,7 +28,7 @@ function handlerRequestArr(requestArr) {
         }
         console.log(requestArr)
         handlerRequest(requestArr[i])
-        requestArr.spacing(i, 1)
+        requestArr.splice(i, 1)
         console.log(requestArr)
         console.log(requestArr.length)
     }
@@ -46,7 +46,7 @@ function handlerRequest(request) {
         let headerItem = header[key];
         result[headerItem.name] = headerItem.value
     }
-    let title = "请求：" + method + " " + url + " header数据--->\n";
+    let title = "请求：" + method + " " + url + " header数据---><br>";
     console.log(title)
     let jsonResult = JSON.stringify(result);
     console.log(jsonResult)
@@ -63,6 +63,24 @@ function appendTagToData(dataElement, tagName, text) {
     // 创建标签并追加到data元素中
     let tagElement = document.createElement(tagName);
     tagElement.innerHTML = text;
+
+    // 添加按钮
+    let btnElement = document.createElement('button');
+    btnElement.innerText = '点击复制';
+    btnElement.addEventListener('click', (event) => {
+        const parentTagElement = event.target.parentNode;
+        console.log('Parent tag text:', parentTagElement.innerText);
+
+
+        navigator.clipboard.writeText(parentTagElement.innerText)
+            .then(() => {
+                console.log("Text was copied to clipboard");
+            })
+            .catch((error) => {
+                console.error("Failed to copy text: ", error);
+            });
+    });
+    tagElement.appendChild(btnElement);
 
     // 添加标记
     let tagCount = dataElement.getElementsByTagName(tagName).length;
