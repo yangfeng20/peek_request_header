@@ -1,4 +1,7 @@
+// 全局数据展示popup页中的元素
 var element = undefined
+
+
 function task() {
     chrome.storage.local.get("requestArr", function (requestArrStorage) {
         let requestArr = requestArrStorage.requestArr;
@@ -6,14 +9,14 @@ function task() {
             return;
         }
 
+        // 消费数据，并更新弹出之后的数据
         handlerRequestArr(requestArr)
-        // 更新弹出之后的数据
-        chrome.storage.local.set({"requestArr":requestArr})
+        chrome.storage.local.set({"requestArr": requestArr})
     })
 }
 
 function findDataElement() {
-    if (!element){
+    if (!element) {
         // 找到id=data的元素
         element = document.getElementById('data');
     }
@@ -23,14 +26,11 @@ function findDataElement() {
 function handlerRequestArr(requestArr) {
     for (let i = requestArr.length - 1; i >= 0; i--) {
         if (!findDataElement()) {
-            console.log("--")
             continue;
         }
-        console.log(requestArr)
         handlerRequest(requestArr[i])
+        // 删除数组中的元素
         requestArr.splice(i, 1)
-        console.log(requestArr)
-        console.log(requestArr.length)
     }
 }
 
@@ -46,10 +46,8 @@ function handlerRequest(request) {
         let headerItem = header[key];
         result[headerItem.name] = headerItem.value
     }
-    let title = "请求：" + method + " " + url + " header数据---><br>";
-    console.log(title)
+    let title = "请求->" + method + " " + url + " header数据: <br>";
     let jsonResult = JSON.stringify(result);
-    console.log(jsonResult)
     show(title + jsonResult)
 }
 
@@ -58,8 +56,6 @@ function show(text) {
 }
 
 function appendTagToData(dataElement, tagName, text) {
-
-
     // 创建标签并追加到data元素中
     let tagElement = document.createElement(tagName);
     tagElement.innerHTML = text;
@@ -69,11 +65,10 @@ function appendTagToData(dataElement, tagName, text) {
     btnElement.innerText = '点击复制';
     btnElement.addEventListener('click', (event) => {
         const parentTagElement = event.target.parentNode;
-        console.log('Parent tag text:', parentTagElement.innerText);
-
-
-        navigator.clipboard.writeText(parentTagElement.innerText)
+        // 写入剪切板
+        navigator.clipboard.writeText(parentTagElement.innerText.split("\n").slice(1).join().replace("点击复制", ""))
             .then(() => {
+                // popup中的脚本打印无法打印值浏览器页面控制台
                 console.log("Text was copied to clipboard");
             })
             .catch((error) => {
@@ -82,9 +77,10 @@ function appendTagToData(dataElement, tagName, text) {
     });
     tagElement.appendChild(btnElement);
 
-    // 添加标记
+    // 添加标签，标签总数不能大于 tagTotal
+    let tagTotal = 30;
     let tagCount = dataElement.getElementsByTagName(tagName).length;
-    if (tagCount >= 20) {
+    if (tagCount >= tagTotal) {
         let lastChild = dataElement.lastChild;
         while (lastChild && lastChild.tagName !== tagName.toUpperCase()) {
             lastChild = lastChild.previousSibling;
@@ -93,8 +89,9 @@ function appendTagToData(dataElement, tagName, text) {
             dataElement.removeChild(lastChild);
         }
     }
-    dataElement.insertBefore(tagElement, dataElement.firstChild);
+    dataElement.insertBefore(tagElement, dataElement.lastChild);
 }
 
 
-setInterval(task, 1000)
+// 定时获取数据
+setInterval(task, 200)
