@@ -6,16 +6,99 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
     <script src="content.js"></script>
+    <style>
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: red;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 10px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: green;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #2196F3;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(20px);
+            -ms-transform: translateX(20px);
+            transform: translateX(20px);
+        }
+    </style>
 
 </head>
 <body style="width: 600px;height: 400px">
 
-<div id="data">等待刷新...</div>
+&nbsp;
+Method <select id="methodSelect">
+    <option value="post">POST</option>
+    <option value="get">GET</option>
+    <option value="all">ALL</option>
+    <option value="put">PUT</option>
+    <option value="options">OPTIONS</option>
+    <option value="head">HEAD</option>
+    <option value="trace">TRACE</option>
+    <option value="delete">DELETE</option>
+    <option value="patch">PATCH</option>
+    <option value="connect">CONNECT</option>
+</select>
+&nbsp;&nbsp;
+
+
+Type&nbsp;<select id="typeSelect">
+    <option value="xmlhttprequest">XHR</option>
+    <option value="other">ALL</option>
+</select>
+&nbsp;&nbsp;
+
+URL&nbsp;&nbsp;<input id="urlInput">&nbsp;&nbsp;
+
+
+Only Catch XHR&nbsp;
+<label class="switch">
+    <input id="xhrSwitch" type="checkbox" checked>
+    <span class="slider"></span>
+</label>
+
+<div id="data"><br/><h2>wait refresh...</h2></div>
 
 
 </body>
 </html>
-
-<script>
-
-</script>

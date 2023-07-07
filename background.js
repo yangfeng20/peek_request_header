@@ -1,20 +1,24 @@
-// 一次请求一个request对象
 let requestArr = []
+let onlyCatchXhr = true
+
+
 let peekRequestHeaderListener = function (request) {
-    if (requestArr.length >= 30) {
-        requestArr = []
-    }
-    // 判断请求是否为 Ajax 异步请求,并过滤非ajax请求
-    if (request.type !== "xmlhttprequest") {
-        console.log("不是 Ajax 异步请求")
+    // 默认仅捕获xhr请求；判断请求是否为 xhr 异步请求,并过滤非xhr请求
+    if (onlyCatchXhr && request.type !== "xmlhttprequest") {
+        console.log("跳过非xhr异步请求")
         return;
     }
+    // 最多存储100个请求
+    if (requestArr.length >= 100) {
+        requestArr = []
+    }
+    console.log("存储请求：", request.url)
     requestArr.push(request)
     chrome.storage.local.set({"requestArr": requestArr})
+
 }
 
 
-console.log("注册requestHeader监听器")
 chrome.webRequest.onBeforeSendHeaders.addListener(
     peekRequestHeaderListener
     ,
@@ -24,13 +28,15 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 );
 
 
-// 获取所有已打开的页面
-let views = chrome.extension.getViews({type: "popup"});
+setInterval(() => {
+    chrome.storage.local.get("requestArr", function (storage) {
+        if (!storage.requestArr || storage.requestArr.length === 0) {
+            requestArr = storage.requestArr
+        }
+    })
 
-// 给所有 popup 注册关闭事件
-for (let i = 0; i < views.length; i++) {
-    let view = views[i];
-    view.addEventListener("unload", function () {
-        chrome.storage.local.set({"requestArr": {}})
-    });
-}
+    chrome.storage.local.get("onlyCatchXhr", function (storage) {
+        onlyCatchXhr = storage.onlyCatchXhr
+        console.log(onlyCatchXhr)
+    })
+}, 500)

@@ -1,19 +1,69 @@
 // 全局数据展示popup页中的元素
-var element = undefined
+let element = undefined
+let requestInfoArr = []
 
 
-function task() {
-    chrome.storage.local.get("requestArr", function (requestArrStorage) {
-        let requestArr = requestArrStorage.requestArr;
+window.onload = function () {
+    main()
+};
+
+function main() {
+
+    // 定位数据渲染元素
+    findDataElement()
+
+    // 注册监听
+    registrySelectListener()
+
+    // 配置捕获xhr异步请求
+    chrome.storage.local.get("onlyCatchXhr", function (storage) {
+        console.log(storage.onlyCatchXhr)
+        catchXhrConfig(storage.onlyCatchXhr)
+    })
+
+
+    // 消费requestInfo信息
+    chrome.storage.local.get("requestArr", function (storage) {
+        let requestArr = storage.requestArr;
         if (!requestArr || requestArr.length === 0) {
             return;
         }
 
-        // 消费数据，并更新弹出之后的数据
-        handlerRequestArr(requestArr)
-        chrome.storage.local.set({"requestArr": requestArr})
+        // 构建requestInfoArr信息
+        requestInfoArr = buildInfo(requestArr)
+
+        // 默认筛选并渲染数据
+        filterData()
+
+        // 清空数据
+        chrome.storage.local.set({"requestArr": [], "refresh": true})
     })
+
+
 }
+
+function catchXhrConfig(onlyCatchXhr) {
+    if (onlyCatchXhr === undefined) {
+        onlyCatchXhr = true;
+    }
+    const switchElem = document.getElementById("xhrSwitch");
+    if (onlyCatchXhr) {
+        switchElem.checked = true;
+        chrome.storage.local.set({"onlyCatchXhr": true})
+    } else {
+        switchElem.checked = false;
+        chrome.storage.local.set({"onlyCatchXhr": false})
+    }
+}
+
+function buildInfo(requestArr) {
+    let requestInfoArr = []
+    requestArr.forEach(request => {
+        requestInfoArr.push(buildRequestInfo(request))
+    })
+    return requestInfoArr
+}
+
 
 function findDataElement() {
     if (!element) {
@@ -23,21 +73,36 @@ function findDataElement() {
     return element;
 }
 
-function handlerRequestArr(requestArr) {
-    for (let i = requestArr.length - 1; i >= 0; i--) {
-        if (!findDataElement()) {
-            continue;
-        }
-        handlerRequest(requestArr[i])
-        // 删除数组中的元素
-        requestArr.splice(i, 1)
-    }
+/**
+ * 注册页面筛选输入框监听
+ */
+function registrySelectListener() {
+    // 添加URL过滤筛选
+    const filterInput = document.getElementById('urlInput');
+    filterInput.addEventListener('input', filterData);
+
+    // 添加请求方法过滤筛选
+    const methodSelect = document.getElementById('methodSelect');
+    methodSelect.addEventListener('change', filterData);
+
+    // 添加请求方法过滤筛选
+    const typeSelect = document.getElementById('typeSelect');
+    typeSelect.addEventListener('change', filterData);
+
+    // 仅捕获xhr异步请求
+    const switchElem = document.getElementById("xhrSwitch");
+    switchElem.addEventListener("click", (e) => {
+        const updateStatus = e.target.checked
+        catchXhrConfig(updateStatus)
+    })
 }
 
-function handlerRequest(request) {
+
+function buildRequestInfo(request) {
     let header = request.requestHeaders
     let method = request.method
     let url = request.url
+    let type = request.type
     let result = {}
     for (let key in header) {
         if (!header.hasOwnProperty(key)) {
@@ -46,52 +111,77 @@ function handlerRequest(request) {
         let headerItem = header[key];
         result[headerItem.name] = headerItem.value
     }
-    let title = "请求->" + method + " " + url + " header数据: <br>";
-    let jsonResult = JSON.stringify(result);
-    show(title + jsonResult)
-}
+    let headers = JSON.stringify(result);
 
-function show(text) {
-    appendTagToData(element, "p", text)
-}
-
-function appendTagToData(dataElement, tagName, text) {
-    // 创建标签并追加到data元素中
-    let tagElement = document.createElement(tagName);
-    tagElement.innerHTML = text;
-
-    // 添加按钮
-    let btnElement = document.createElement('button');
-    btnElement.innerText = '点击复制';
-    btnElement.addEventListener('click', (event) => {
-        const parentTagElement = event.target.parentNode;
-        // 写入剪切板
-        navigator.clipboard.writeText(parentTagElement.innerText.split("\n").slice(1).join().replace("点击复制", ""))
-            .then(() => {
-                // popup中的脚本打印无法打印值浏览器页面控制台
-                console.log("Text was copied to clipboard");
-            })
-            .catch((error) => {
-                console.error("Failed to copy text: ", error);
-            });
-    });
-    tagElement.appendChild(btnElement);
-
-    // 添加标签，标签总数不能大于 tagTotal
-    let tagTotal = 30;
-    let tagCount = dataElement.getElementsByTagName(tagName).length;
-    if (tagCount >= tagTotal) {
-        let lastChild = dataElement.lastChild;
-        while (lastChild && lastChild.tagName !== tagName.toUpperCase()) {
-            lastChild = lastChild.previousSibling;
-        }
-        if (lastChild) {
-            dataElement.removeChild(lastChild);
-        }
+    // 构建请求信息对象
+    return {
+        method,
+        url,
+        type,
+        headers
     }
-    dataElement.insertBefore(tagElement, dataElement.lastChild);
 }
 
 
-// 定时获取数据
-setInterval(task, 200)
+// 渲染数据
+function renderData(requestInfoArr) {
+    const container = document.getElementById('data');
+    container.innerHTML = '';
+
+    for (let i = 0; i < requestInfoArr.length; i++) {
+        const requestInfo = requestInfoArr[i];
+        const dataDiv = document.createElement('div');
+
+        // 添加标签内容
+        const dataTag = document.createElement('p');
+        dataTag.textContent = `Method: ${requestInfo.method}  | Type: ${requestInfo.type} | URL: ${requestInfo.url}`;
+        dataDiv.appendChild(dataTag);
+
+        // 添加按钮
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy Headers';
+        // 使用自定义属性存储headers数据
+        copyBtn.dataset.headers = JSON.stringify(requestInfo.headers);
+        copyBtn.addEventListener('click', function () {
+            navigator.clipboard.writeText(requestInfo.headers)
+                .then(() => {
+                    console.log("copy success")
+                })
+                .catch(err => {
+                    console.error('Failed to copy headers:', err);
+                });
+        });
+        dataDiv.appendChild(copyBtn);
+
+        container.appendChild(dataDiv);
+    }
+}
+
+/**
+ * 过滤数据并重新渲染
+ */
+function filterData() {
+    const methodValue = document.getElementById('methodSelect').value.toLowerCase();
+    const typeValue = document.getElementById('typeSelect').value.toLowerCase();
+    const urlValue = document.getElementById('urlInput').value.toLowerCase();
+
+    // 过滤数据并重新渲染
+    renderData(filterDataInner(methodValue, typeValue, urlValue));
+}
+
+/**
+ * 过滤数据
+ * @param methodValue 请求方法 get post
+ * @param typeValue 请求类型 xhr document
+ * @param urlValue 请求url
+ */
+function filterDataInner(methodValue, typeValue, urlValue) {
+    return requestInfoArr.filter(requestData =>
+        (
+            (methodValue === "all" ? true : requestData.method.toLowerCase() === methodValue) &&
+            // 如果不是异步请求，就是其他所有类型
+            (typeValue !== "xmlhttprequest" ? true : requestData.type.toLowerCase() === typeValue) &&
+            requestData.url.toLowerCase().includes(urlValue)
+        )
+    );
+}
