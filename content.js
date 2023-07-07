@@ -17,7 +17,6 @@ function main() {
 
     // 配置捕获xhr异步请求
     chrome.storage.local.get("onlyCatchXhr", function (storage) {
-        console.log(storage.onlyCatchXhr)
         catchXhrConfig(storage.onlyCatchXhr)
     })
 

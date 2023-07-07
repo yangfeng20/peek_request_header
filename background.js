@@ -37,6 +37,6 @@ setInterval(() => {
 
     chrome.storage.local.get("onlyCatchXhr", function (storage) {
         onlyCatchXhr = storage.onlyCatchXhr
-        console.log(onlyCatchXhr)
+        console.log("当前onlyCatchXhr状态：", onlyCatchXhr)
     })
 }, 500)
