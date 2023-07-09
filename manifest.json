@@ -1,5 +1,6 @@
 {
   "name": "Peek Request Header",
+  "description": "偷偷查看浏览器每次请求的headers json数据",
   "version": "1.0",
   "manifest_version": 2,
   "permissions": [

@@ -3,6 +3,11 @@ let onlyCatchXhr = true
 
 
 let peekRequestHeaderListener = function (request) {
+
+    if (requestArr === undefined) {
+        requestArr = []
+    }
+
     // 默认仅捕获xhr请求；判断请求是否为 xhr 异步请求,并过滤非xhr请求
     if (onlyCatchXhr && request.type !== "xmlhttprequest") {
         console.log("跳过非xhr异步请求")
