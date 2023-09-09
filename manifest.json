@@ -1,19 +1,22 @@
 {
   "name": "Peek Request Header",
-  "description": "偷偷查看浏览器每次请求的headers json数据",
+  "description": "窥视浏览器每次请求的headers json数据",
   "version": "1.0",
-  "manifest_version": 2,
+  "manifest_version": 3,
+  "icons": {
+    "16": "images/icon.png",
+    "24": "images/icon.png",
+    "32": "images/icon.png",
+    "128": "images/icon128.png"
+  },
   "permissions": [
     "webRequest",
-    "storage",
-    "<all_urls>"
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*/*"
   ],
   "background": {
-    "scripts": [
-      "background.js"
-    ]
-  },
-  "browser_action": {
-    "default_popup": "popup.html"
+    "service_worker": "background.js"
   }
 }
